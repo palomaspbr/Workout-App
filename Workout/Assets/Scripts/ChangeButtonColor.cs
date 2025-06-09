@@ -3,14 +3,30 @@ using UnityEngine.UI;
 
 public class ChangeButtonColor : MonoBehaviour
 {
-    public void ChangeColor()
+    private bool _isGreen = false;
+    public void ToggleColor()
     {
-        string color = "#7CF6BA";
-        Button button = GetComponent<Button>();
-        Color newcolor;
-        if (ColorUtility.TryParseHtmlString(color, out newcolor))
+        if (_isGreen)
         {
-            button.image.color = newcolor;
+            string color = "#FFFFFF";
+            Button button = GetComponent<Button>();
+            Color newcolor;
+            if (ColorUtility.TryParseHtmlString(color, out newcolor))
+            {
+                button.image.color = newcolor;
+            }
+            _isGreen = false;
+        }
+        else
+        {
+            string color = "#7CF6BA";
+            Button button = GetComponent<Button>();
+            Color newcolor;
+            if (ColorUtility.TryParseHtmlString(color, out newcolor))
+            {
+                button.image.color = newcolor;
+            }
+            _isGreen = true;
         }
     }
 
@@ -23,5 +39,6 @@ public class ChangeButtonColor : MonoBehaviour
         {
             button.image.color = newcolor;
         }
+        _isGreen = false;
     }
 }
