@@ -22,27 +22,26 @@ public class LoadExercise : MonoBehaviour
 
     private void _UI_Logic_OnLoadExercise1(object sender, ExerciseParameters e)
     {
-        Debug.Log($"[LoadExercise] Loaded exercise {e.exerciseName}, with {e.exerciseSeries} series and {e.exercisesPerSeries} respetitions per serie.");
+        Debug.Log($"[LoadExercise] Loaded exercise {e.ExerciseName}, with {e.ExerciseSeries} series and {e.ExercisesPerSeries} respetitions per serie.");
 
         int i = 0;
         foreach(var item in SeriesUI)
         {
-            if (i <= e.exerciseSeries -1)
+            item.GetComponent<ChangeButtonColor>().ResetColor();
+            if (i <= e.ExerciseSeries -1)
             {
                 item.SetActive(true);
-                item.GetComponentInChildren<TMP_Text>().text = e.exercisesPerSeries.ToString();
-                item.GetComponent<ChangeButtonColor>().ResetColor();
+                item.GetComponentInChildren<TMP_Text>().text = e.ExercisesPerSeries.ToString() + " (" + e.Load.ToString() + "kg)";
             }
             else
             {
                 item.SetActive(false);
-                item.GetComponent<ChangeButtonColor>().ResetColor();
             }
             i++;
         }
 
-        _Exercise_Title.text = "Exercício " + e.exerciseIndex;
-        _Exercise_Name.text = e.exerciseName;
+        _Exercise_Title.text = "Exercício " + e.ExerciseIndex;
+        _Exercise_Name.text = e.ExerciseName;
 
     }
 }

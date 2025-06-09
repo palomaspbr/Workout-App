@@ -1,25 +1,38 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class ExerciseParameters
 {
-    public int exerciseIndex;
-    public string exerciseName;
-    public int exerciseSeries;
-    public int exercisesPerSeries;
+    public int ExerciseIndex;
+    public string ExerciseName;
+    public int ExerciseSeries;
+    public int ExercisesPerSeries;
+    public float Load;
 
-    public int restLocal;
-    public int restGlobal;
+    public float[] Load_Series;
+
+    public int RestLocal;
+    public int RestGlobal;
+}
+
+public class Workout
+{
+    public ExerciseParameters[] Exercises;
 }
 
 public class UI_Logic : MonoBehaviour
 {
     [Header("Panel Start")]
     [SerializeField] private GameObject _Panel_Start;
+
+    [Header("Panel Load")]
+    [SerializeField] private GameObject _Panel_Load;
 
     [Header("Panel Input Exercises")]
     [SerializeField] private GameObject _Panel_InputExercises;
@@ -30,6 +43,7 @@ public class UI_Logic : MonoBehaviour
     [SerializeField] private TMP_InputField _InputField_EX;
     [SerializeField] private TMP_InputField _InputField_EX_Amount;
     [SerializeField] private TMP_InputField _InputField_EX_Amount_PerSerie;
+    [SerializeField] private TMP_InputField _InputField_EX_Load;
     [SerializeField] private TMP_InputField _InputField_EX_RestLocal;
     [SerializeField] private TMP_InputField _InputField_EX_RestGlobal;
 
@@ -49,6 +63,9 @@ public class UI_Logic : MonoBehaviour
     private int _currentExercise;
 
     public Dictionary<int, ExerciseParameters> Exercises = new();
+
+    [SerializeField] private GameObject[] _Button_Workout;
+    private Workout _workout;
 
     private void Start()
     {
@@ -77,18 +94,27 @@ public class UI_Logic : MonoBehaviour
         _Panel_InputExercises?.SetActive(false);
         _Panel_InputExercise.SetActive(true);
         _currentExerciseInput = 1;
+        _workout = new Workout();
     }
 
     public void InputExercise()
     {
         ExerciseParameters exercise = new ExerciseParameters();
         // Get information from exercise 
-        exercise.exerciseIndex = _currentExerciseInput;
-        exercise.exerciseName = _InputField_EX.text;
-        int.TryParse(_InputField_EX_Amount.text, out exercise.exerciseSeries);
-        int.TryParse(_InputField_EX_Amount_PerSerie.text, out exercise.exercisesPerSeries);
-        int.TryParse(_InputField_EX_RestLocal.text, out exercise.restLocal);
-        int.TryParse(_InputField_EX_RestGlobal.text, out exercise.restGlobal);
+        exercise.ExerciseIndex = _currentExerciseInput;
+        exercise.ExerciseName = _InputField_EX.text;
+        int.TryParse(_InputField_EX_Amount.text, out exercise.ExerciseSeries);
+        int.TryParse(_InputField_EX_Amount_PerSerie.text, out exercise.ExercisesPerSeries);
+        float.TryParse(_InputField_EX_Amount_PerSerie.text, out exercise.Load);
+        int.TryParse(_InputField_EX_RestLocal.text, out exercise.RestLocal);
+        int.TryParse(_InputField_EX_RestGlobal.text, out exercise.RestGlobal);
+
+        for(int i = 0; i < exercise.ExerciseSeries; i++)
+        {
+            exercise.Load_Series[i] = exercise.Load;
+        }
+
+        _workout.Exercises[_currentExerciseInput] = exercise;
 
         Exercises.Add(_currentExerciseInput, exercise);
 
@@ -107,6 +133,15 @@ public class UI_Logic : MonoBehaviour
             _Panel_InputExercise?.SetActive(false);
             _Panel_Exercise?.SetActive(true);
             _currentExercise = 0;
+
+            for(int i = 0; i<10; i++)
+            {
+                if (Serializer.Load<Workout>("Workout" + i) == default)
+                {
+                    Serializer.Save("Workout" + i, _workout);
+                    break;
+                }
+            }
             StartCoroutine(CO_LoadNextExercise());
         }
 
@@ -138,7 +173,7 @@ public class UI_Logic : MonoBehaviour
     public void StartTimerGlobal()
     {
         StartCoroutine(CO_StartTimer(false));
-        OnStartTimer(this, Exercises[_currentExercise].restGlobal);
+        OnStartTimer(this, Exercises[_currentExercise].RestGlobal);
     }
 
     IEnumerator CO_StartTimer(bool isLocal)
@@ -147,10 +182,10 @@ public class UI_Logic : MonoBehaviour
         _Panel_Exercise?.SetActive(false);
         yield return null;
         if (isLocal) {
-            OnStartTimer(this, Exercises[_currentExercise].restLocal);
+            OnStartTimer(this, Exercises[_currentExercise].RestLocal);
         }
         else {
-            OnStartTimer(this, Exercises[_currentExercise].restGlobal);
+            OnStartTimer(this, Exercises[_currentExercise].RestGlobal);
         }
     }
 
@@ -161,4 +196,70 @@ public class UI_Logic : MonoBehaviour
 
     }
 
+    public void Load()
+    {
+        _Panel_Start?.SetActive(false);
+        _Panel_Load?.SetActive(true);
+
+        for (int i = 0; i < 10; i++)
+        {
+            if (Serializer.Load<Workout>("Workout" + i) == default)
+            {
+                break;
+            }
+
+            _Button_Workout[i].SetActive(true);
+        }
+    }
+
+    public void LoadWorkout(int index)
+    {
+        string fileToLoad = "Workout" + index;
+        _workout = Serializer.Load<Workout>(fileToLoad);
+
+        _currentExerciseInput = 1;
+        foreach (ExerciseParameters exercise in _workout.Exercises)
+        {
+            Exercises.Add(_currentExerciseInput, exercise);
+            _currentExerciseInput ++;
+        }
+
+        _Panel_Load?.SetActive(false);
+        _Panel_Exercise?.SetActive(true);
+        _currentExercise = 0;
+        StartCoroutine(CO_LoadNextExercise());
+    }
+
+}
+
+public class Serializer
+{
+    public static T Load<T>(string filename) where T : class
+    {
+        if (File.Exists(filename))
+        {
+            try
+            {
+                using (Stream stream = File.OpenRead(filename))
+                {
+                    BinaryFormatter formatter = new BinaryFormatter();
+                    return formatter.Deserialize(stream) as T;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.Message);
+            }
+        }
+        return default(T);
+    }
+
+    public static void Save<T>(string filename, T data) where T : class
+    {
+        using (Stream stream = File.OpenWrite(filename))
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Serialize(stream, data);
+        }
+    }
 }
