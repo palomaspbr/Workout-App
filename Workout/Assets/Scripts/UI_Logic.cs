@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Enumeration;
 using System.Runtime.Serialization.Formatters.Binary;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+[Serializable]
 public class ExerciseParameters
 {
     public int ExerciseIndex;
@@ -15,15 +17,16 @@ public class ExerciseParameters
     public int ExercisesPerSeries;
     public float Load;
 
-    public float[] Load_Series;
+    public float[] Load_Series = new float[12];
 
     public int RestLocal;
     public int RestGlobal;
 }
 
+[Serializable]
 public class Workout
 {
-    public ExerciseParameters[] Exercises;
+    public ExerciseParameters[] Exercises = new ExerciseParameters[100];
 }
 
 public class UI_Logic : MonoBehaviour
@@ -94,6 +97,7 @@ public class UI_Logic : MonoBehaviour
         _Panel_InputExercises?.SetActive(false);
         _Panel_InputExercise.SetActive(true);
         _currentExerciseInput = 1;
+        Exercises.Clear();
         _workout = new Workout();
     }
 
@@ -212,16 +216,20 @@ public class UI_Logic : MonoBehaviour
         }
     }
 
+
     public void LoadWorkout(int index)
     {
         string fileToLoad = "Workout" + index;
         _workout = Serializer.Load<Workout>(fileToLoad);
-
+        Exercises.Clear();
         _currentExerciseInput = 1;
         foreach (ExerciseParameters exercise in _workout.Exercises)
         {
-            Exercises.Add(_currentExerciseInput, exercise);
-            _currentExerciseInput ++;
+            if(exercise != null)
+            {
+                Exercises.Add(_currentExerciseInput, exercise);
+                _currentExerciseInput++;
+            }
         }
 
         _Panel_Load?.SetActive(false);
@@ -230,17 +238,30 @@ public class UI_Logic : MonoBehaviour
         StartCoroutine(CO_LoadNextExercise());
     }
 
+    public void DeleteAllWorkouts()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            string filename = "Workout" + i;
+            if (Serializer.DeleteWorkout<Workout>(filename) == default)
+            {
+                break;
+            }
+        }
+    }
 }
 
 public class Serializer
 {
     public static T Load<T>(string filename) where T : class
     {
-        if (File.Exists(filename))
+        string m_Path = Application.dataPath + "/Workouts/" + filename + ".txt";
+        Debug.Log(m_Path);
+        if (File.Exists(m_Path))
         {
             try
             {
-                using (Stream stream = File.OpenRead(filename))
+                using (Stream stream = File.OpenRead(m_Path))
                 {
                     BinaryFormatter formatter = new BinaryFormatter();
                     return formatter.Deserialize(stream) as T;
@@ -254,9 +275,32 @@ public class Serializer
         return default(T);
     }
 
+    public static T DeleteWorkout<T>(string filename) where T : class
+    {
+        string m_Path = Application.dataPath + "/Workouts/" + filename + ".txt";
+        if (File.Exists(m_Path))
+        {
+            try
+            {
+                using (Stream stream = File.OpenRead(filename))
+                {
+                    File.Delete(m_Path); 
+                }  
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.Message);
+            }
+        }
+        return default(T);
+            
+    }
+
     public static void Save<T>(string filename, T data) where T : class
     {
-        using (Stream stream = File.OpenWrite(filename))
+        string m_Path = Application.dataPath + "/Workouts/" + filename + ".txt";
+        File.WriteAllText(m_Path, " ");
+        using (Stream stream = File.OpenWrite(m_Path))
         {
             BinaryFormatter formatter = new BinaryFormatter();
             formatter.Serialize(stream, data);
