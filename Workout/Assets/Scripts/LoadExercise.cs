@@ -40,7 +40,8 @@ public class LoadExercise : MonoBehaviour
             i++;
         }
 
-        _Exercise_Title.text = "Exercício " + e.ExerciseIndex;
+        int index = e.ExerciseIndex + 1;
+        _Exercise_Title.text = "Exercício " + index;
         _Exercise_Name.text = e.ExerciseName;
 
     }

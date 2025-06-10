@@ -96,7 +96,7 @@ public class UI_Logic : MonoBehaviour
         int.TryParse(_InputField_Exercises.text, out _amountOfExercises);
         _Panel_InputExercises?.SetActive(false);
         _Panel_InputExercise.SetActive(true);
-        _currentExerciseInput = 1;
+        _currentExerciseInput = 0;
         Exercises.Clear();
         _workout = new Workout();
     }
@@ -128,10 +128,11 @@ public class UI_Logic : MonoBehaviour
         _InputField_EX.text = null;
         _InputField_EX_Amount.text = null;
         _InputField_EX_Amount_PerSerie.text = null;
+        _InputField_EX_Load.text = null;
         _InputField_EX_RestLocal.text = null;
         _InputField_EX_RestGlobal.text = null;
 
-        if (_currentExerciseInput > _amountOfExercises)
+        if (_currentExerciseInput >= _amountOfExercises)
         {
             _currentExerciseInput = 0;
             _Panel_InputExercise?.SetActive(false);
@@ -159,8 +160,7 @@ public class UI_Logic : MonoBehaviour
     IEnumerator CO_LoadNextExercise()
     {
         yield return null;
-        _currentExercise += 1;
-        if (_currentExercise > _amountOfExercises)
+        if (_currentExercise >= _amountOfExercises)
         {
             // Finish training
             Debug.Log("[UI_Logic] Finished training.");
@@ -168,6 +168,7 @@ public class UI_Logic : MonoBehaviour
             yield break;
         }
         OnLoadExercise(this, Exercises[_currentExercise]);
+        _currentExercise += 1;
     }
 
     public void StartTimerLocal()
@@ -229,7 +230,7 @@ public class UI_Logic : MonoBehaviour
         string fileToLoad = "Workout" + index;
         _workout = Serializer.Load<Workout>(fileToLoad);
         Exercises.Clear();
-        _currentExerciseInput = 1;
+        _currentExerciseInput = 0;
         foreach (ExerciseParameters exercise in _workout.Exercises)
         {
             if (exercise != null)
