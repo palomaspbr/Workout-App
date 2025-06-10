@@ -163,6 +163,7 @@ public class UI_Logic : MonoBehaviour
         if (_currentExercise > _amountOfExercises)
         {
             // Finish training
+            Debug.Log("[UI_Logic] Finished training.");
             Restart();
             yield break;
         }
@@ -219,19 +220,26 @@ public class UI_Logic : MonoBehaviour
 
     public void LoadWorkout(int index)
     {
+
+        StartCoroutine(CO_LoadWorkout(index));
+    }
+
+    IEnumerator CO_LoadWorkout(int index)
+    {
         string fileToLoad = "Workout" + index;
         _workout = Serializer.Load<Workout>(fileToLoad);
         Exercises.Clear();
         _currentExerciseInput = 1;
         foreach (ExerciseParameters exercise in _workout.Exercises)
         {
-            if(exercise != null)
+            if (exercise != null)
             {
                 Exercises.Add(_currentExerciseInput, exercise);
                 _currentExerciseInput++;
             }
         }
-
+        _amountOfExercises = Exercises.Count;
+        yield return null;
         _Panel_Load?.SetActive(false);
         _Panel_Exercise?.SetActive(true);
         _currentExercise = 0;
